@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音乐播放器</title>
+    <style>
+        @font-face {
+            font-family: 'CustomFont';
+            src: url('SuXinShiGuYinSongJian-1.ttf') format('truetype');
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            font-family: 'CustomFont', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .player-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .music-title {
+            font-size: 10vw;
+            cursor: pointer;
+            text-align: center;
+            padding: 5%;
+            transition: opacity 0.3s;
+            user-select: none;
+            width: 90%;
+            max-width: 90%;
+            word-wrap: break-word;
+            line-height: 1.2;
+            font-weight: normal;
+        }
+
+        .music-title:hover {
+            opacity: 0.8;
+        }
+
+        .buttons {
+            position: absolute;
+            bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0 20px;
+            opacity: 0; 
+            transition: opacity 0.3s ease;
+        }
+
+        button {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button:hover {
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        @media (orientation: portrait) {
+            .player-container {
+                transform: rotate(90deg);
+                transform-origin: left top;
+                width: 100vh;
+                height: 100vw;
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+            
+            .music-title {
+                font-size: 10vh;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) rotate(-90deg);
+                width: 80vh;
+                height: 80vw;
+            }
+        }
+
+        @media (hover: hover) {
+            .player-container:hover .buttons {
+                opacity: 1;
+            }
+        }
+
+        @media (hover: none) {
+            .buttons {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <div class="music-title" id="title">加载中...</div>
+        <div class="buttons">
+            <button id="prev">◀</button>
+            <button id="next">▶</button>
+        </div>
+        <audio id="audio-player" style="display: none;"></audio>
+    </div>
+
+    <script>
+        const musicList = [
+            { 
+                title: "东南苦行山", 
+                src: "music/001.mp3",
+                color: "#3357FF" 
+            },
+            { 
+                title: "牵丝戏", 
+                src: "music/002.mp3",
+                color: "#DC143C"
+            },
+            { 
+                title: "弱水三千", 
+                src: "music/003.mp3",
+                color: "#DC143C"
+            }
+        ];
+
+        let currentIndex = 0;
+        const audioPlayer = document.getElementById('audio-player');
+        const titleElement = document.getElementById('title');
+        const prevButton = document.getElementById('prev');
+        const nextButton = document.getElementById('next');
+
+        function loadMusic(index, autoPlay = true) {
+            if (index < 0 || index >= musicList.length) return;
+            const music = musicList[index];
+            audioPlayer.src = music.src;
+            titleElement.textContent = music.title;
+            
+            document.title = music.title + " - 音乐播放器";
+            
+            if (music.color) {
+                titleElement.style.color = music.color;
+            }
+            
+            if (autoPlay) {
+                const playPromise = audioPlayer.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(function(error) {
+                        console.log("自动播放被阻止，等待用户交互:", error);
+                    });
+                }
+            }
+        }
+
+        function togglePlayPause() {
+            if (audioPlayer.paused) {
+                audioPlayer.play().catch(function(error) {
+                    console.log("播放失败:", error);
+                });
+            } else {
+                audioPlayer.pause();
+            }
+        }
+
+        function playNext() {
+            currentIndex = (currentIndex + 1) % musicList.length;
+            loadMusic(currentIndex, true);
+        }
+
+        function playPrev() {
+            currentIndex = (currentIndex - 1 + musicList.length) % musicList.length;
+            loadMusic(currentIndex, true);
+        }
+
+        function handleOrientationChange() {
+            const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+            
+            if (isPortrait) {
+                document.querySelector('.player-container').style.transform = 'rotate(90deg)';
+            } else {
+                document.querySelector('.player-container').style.transform = 'none';
+            }
+        }
+
+        titleElement.addEventListener('click', togglePlayPause);
+        prevButton.addEventListener('click', playPrev);
+        nextButton.addEventListener('click', playNext);
+        audioPlayer.addEventListener('ended', playNext); // 当前歌曲结束时自动播放下一首
+        
+        window.addEventListener('resize', handleOrientationChange);
+        window.addEventListener('orientationchange', handleOrientationChange);
+
+        document.addEventListener('keydown', (event) => {
+            switch(event.key) {
+                case ' ':
+                    event.preventDefault();
+                    togglePlayPause();
+                    break;
+                case 'ArrowLeft':
+                    playPrev();
+                    break;
+                case 'ArrowRight':
+                    playNext();
+                    break;
+            }
+        });
+
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', (event) => {
+            touchStartX = event.changedTouches[0].screenX;
+        });
+        
+        document.addEventListener('touchend', (event) => {
+            touchEndX = event.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    playNext();
+                } else {
+                    playPrev();
+                }
+            }
+        }
+
+        function init() {
+            loadMusic(0, true);
+            handleOrientationChange();
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
