@@ -364,7 +364,6 @@ const musicList=[
  {title:"半壶纱",src:"music/007.mp3",lrc:"lrc/007.lrc",color:"#DC143C"},
  {title:"关山酒",src:"music/008.mp3",lrc:"lrc/008.lrc",color:"#DC143C"},
  {title:"春庭雪",src:"music/009.mp3",lrc:"lrc/009.lrc",color:"#DC143C"},
- {title:"赐我",src:"music/010.mp3",lrc:"lrc/010.lrc",color:"#DC143C"},
  {title:"折风渡夜",src:"music/012.mp3",lrc:"lrc/012.lrc",color:"#DC143C"}
 ];
 
@@ -396,17 +395,33 @@ function getCookie(k){
 }
 
 function applySettings(){
- title.style.fontSize=settings.titleSize+'px';
- lyric.style.fontSize=settings.lyricSize+'px';
- title.style.display='';
- lyric.style.display='';
+    title.style.fontSize = settings.titleSize + 'px';
+    lyric.style.fontSize = settings.lyricSize + 'px';
 
- if(settings.mode==='title'){lyric.style.display='none';}
- if(settings.mode==='lyric'){lyric.style.display='none';}
- setCookie('mode',settings.mode);
- setCookie('titleSize',settings.titleSize);
- setCookie('lyricSize',settings.lyricSize);
+    // 统一先显示
+    title.style.display = '';
+    lyric.style.display = '';
+
+    if(settings.mode === 'title'){
+        title.textContent = currentTitle;
+        lyric.style.display = 'none';
+    }
+
+    if(settings.mode === 'title-lyric'){
+        title.textContent = currentTitle;
+        // lyric 内容由 ontimeupdate 驱动
+    }
+
+    if(settings.mode === 'lyric'){
+        lyric.style.display = 'none';
+        // title 内容由 ontimeupdate 驱动
+    }
+
+    setCookie('mode', settings.mode);
+    setCookie('titleSize', settings.titleSize);
+    setCookie('lyricSize', settings.lyricSize);
 }
+
 
 async function loadLyrics(path){
  lyrics=[];
@@ -433,15 +448,20 @@ async function loadMusic(i,play=true){
  if(play)audio.play();
 }
 
-audio.ontimeupdate=()=>{
- for(let i=lyrics.length-1;i>=0;i--){
-  if(audio.currentTime>=lyrics[i].time){
-   if(settings.mode==='title-lyric')lyric.textContent=lyrics[i].content||'';
-   if(settings.mode==='lyric')title.textContent=lyrics[i].content||currentTitle;
-   break;
-  }
- }
+audio.ontimeupdate = () => {
+    for(let i = lyrics.length - 1; i >= 0; i--){
+        if(audio.currentTime >= lyrics[i].time){
+            if(settings.mode === 'title-lyric'){
+                lyric.textContent = lyrics[i].content || '';
+            }
+            if(settings.mode === 'lyric'){
+                title.textContent = lyrics[i].content || currentTitle;
+            }
+            break;
+        }
+    }
 };
+
 
 function updatePlaylist(){
  songList.innerHTML='';
